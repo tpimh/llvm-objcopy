@@ -85,7 +85,7 @@ public:
             if (FillNextGap) {
                 if (SectionAddress < LastAddress) {
                     errs() << "Trying to fill gaps between sections " << LastSectionName << " and " << SectionName << " in invalid order\n";
-                    return;
+                    continue;//return;
                 } else if (SectionAddress == LastAddress) {
                     // No gap, do nothing
                 } else if (SectionAddress - LastAddress > (1<<16)) {
