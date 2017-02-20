@@ -153,7 +153,7 @@ protected:
 
 int main(int argc, char **argv) {
     // Print a stack trace if we signal out.
-    sys::PrintStackTraceOnErrorSignal();
+    sys::PrintStackTraceOnErrorSignal(argv[0]);
     PrettyStackTraceProgram X(argc, argv);
     llvm_shutdown_obj Y;  // Call llvm_shutdown() on exit.
 
@@ -172,15 +172,13 @@ int main(int argc, char **argv) {
     }
    
     // Attempt to open the binary.
-    ErrorOr<OwningBinary<Binary>> BinaryOrErr = createBinary(InputFilename);
-    if (std::error_code EC = BinaryOrErr.getError()) {
-        //reportError(File, EC);
+    Expected<OwningBinary<Binary>> BinaryOrErr = createBinary(InputFilename);
+    if (!BinaryOrErr)
         return 1;
-    }
     Binary &Binary = *BinaryOrErr.get().getBinary();
     
     ObjectFile *Obj = dyn_cast<ObjectFile>(&Binary);
-    if(!Obj){
+    if (!Obj) {
         return 1;
     }
 
