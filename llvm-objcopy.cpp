@@ -35,7 +35,19 @@ InputFilename(cl::Positional, cl::desc("<input object file>"), cl::Required);
 static cl::opt<std::string>
 OutputFilename(cl::Positional, cl::desc("<output object file>"), cl::Required);
 
-static StringRef ToolName;
+
+namespace {
+    enum OutputFormatTy { binary };
+    cl::opt<OutputFormatTy>
+        OutputTarget("O",
+                cl::desc("Specify output target"),
+                cl::values(clEnumVal(binary, "raw binary")),
+                cl::init(binary));
+    cl::alias OutputTarget2("output-target", cl::desc("Alias for -O"),
+            cl::aliasopt(OutputTarget));
+
+    static StringRef ToolName;
+}
 
 bool error(std::error_code ec) {
     if (!ec) return false;
@@ -162,15 +174,21 @@ int main(int argc, char **argv) {
     ToolName = argv[0];
     std::unique_ptr<ObjectCopyBase> ObjectCopy;
 
-    ObjectCopy.reset(new ObjectCopyBinary(InputFilename));
-    
+    switch (OutputTarget) {
+    case OutputFormatTy::binary:
+        ObjectCopy.reset(new ObjectCopyBinary(InputFilename));
+        break;
+    default:
+        return 1;
+    }
+
 
     // If file isn't stdin, check that it exists.
     if (InputFilename != "-" && !sys::fs::exists(InputFilename)) {
         errs() << ToolName << ": '" << InputFilename << "': " << "No such file\n";
         return 1;
     }
-   
+
     // Attempt to open the binary.
     Expected<OwningBinary<Binary>> BinaryOrErr = createBinary(InputFilename);
     if (!BinaryOrErr)
